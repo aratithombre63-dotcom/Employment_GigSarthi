@@ -1,0 +1,70 @@
+import json
+import requests
+from bs4 import BeautifulSoup
+
+def scrape_jobs():
+    url = "https://remoteok.com/remote-dev-jobs"  # demo scraping site
+    headers = {"User-Agent": "Mozilla/5.0"}
+
+    response = requests.get(url, headers=headers)
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    jobs = []
+    job_cards = soup.find_all("tr", class_="job")
+
+    for job in job_cards[:10]:  # limit for demo
+        try:
+            title = job.find("h2").text.strip()
+            company = job.find("h3").text.strip()
+
+            jobs.append({
+                "title": title,
+                "company": company,
+                "estimated_pay": 500 + len(title) * 10  # fake pay logic
+            })
+        except:
+            continue
+
+    return jobs
+
+
+def analyze_data(jobs):
+    if not jobs:
+        return {}
+
+    total_pay = sum(job["estimated_pay"] for job in jobs)
+    avg_pay = total_pay / len(jobs)
+
+    high_risk = [job for job in jobs if job["estimated_pay"] < avg_pay]
+
+    return {
+        "total_jobs": len(jobs),
+        "average_pay": round(avg_pay, 2),
+        "high_risk_jobs": len(high_risk)
+    }
+
+
+def main():
+    try:
+        jobs = scrape_jobs()
+        analysis = analyze_data(jobs)
+
+        result = {
+            "status": "success",
+            "data": {
+                "jobs": jobs,
+                "insights": analysis
+            }
+        }
+
+    except Exception as e:
+        result = {
+            "status": "error",
+            "message": str(e)
+        }
+
+    print(json.dumps(result))
+
+
+if __name__ == "__main__":
+    main()
